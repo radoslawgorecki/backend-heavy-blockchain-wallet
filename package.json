@@ -9,17 +9,28 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hyper-fetch/core": "^5.5.0",
+    "@hyper-fetch/react": "^5.5.0",
+    "@tatumcom/js": "^1.5.5",
     "@types/node": "20.4.1",
     "@types/react": "18.2.14",
     "@types/react-dom": "18.2.6",
     "autoprefixer": "10.4.14",
+    "binance-icons": "^0.5.1",
     "eslint": "8.44.0",
     "eslint-config-next": "13.4.9",
+    "ethers": "^6.6.2",
+    "formik": "^2.4.2",
     "next": "13.4.9",
     "postcss": "8.4.25",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-hooks-global-state": "^2.1.0",
     "tailwindcss": "3.3.2",
-    "typescript": "5.1.6"
+    "typescript": "5.1.6",
+    "yup": "^1.2.0"
+  },
+  "devDependencies": {
+    "daisyui": "^3.2.1"
   }
 }
