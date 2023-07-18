@@ -2,6 +2,7 @@ import { sendTransaction } from "@/hyperfetch/dashboard";
 import { Transaction } from "@/types/transaction";
 import { useSubmit } from "@hyper-fetch/react";
 import React, { FC } from "react";
+import { toast } from "react-hot-toast";
 
 interface TransactionModal extends Partial<Exclude<Transaction, "amount">> {
   isOpened: boolean;
@@ -22,9 +23,12 @@ const TransactionModal: FC<TransactionModal> = ({
   const { onSubmitSuccess, onSubmitError, submit } = useSubmit(sendTransaction);
 
   onSubmitSuccess(({ response }) => {
-    debugger;
+    toast.success(`Success, transaction sent. ${response}`);
   });
-  onSubmitError((err) => console.error(err));
+  onSubmitError((err) => {
+    toast.error("Something went wrong, check console.");
+    console.error(err);
+  });
   if (!isOpened) return null;
   return (
     <dialog
