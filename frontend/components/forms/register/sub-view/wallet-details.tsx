@@ -1,5 +1,4 @@
 "use client";
-import { getGlobalState } from "@/components/state";
 import { useRouter } from "next/navigation";
 import React, { FC } from "react";
 
@@ -30,7 +29,9 @@ const WalletDetails: FC<{
   address: string;
   mnemonic: string;
   privateKey: string;
-}> = ({ address, mnemonic, privateKey }) => {
+  redirect?: string;
+  buttonText?: string;
+}> = ({ address, mnemonic, privateKey, redirect, buttonText }) => {
   const router = useRouter();
   if (!address || !mnemonic) return null;
   return (
@@ -51,8 +52,11 @@ const WalletDetails: FC<{
             ${mnemonic}`}
         />
       </div>
-      <button className="btn btn-primary" onClick={() => router.push("/")}>
-        Log me in
+      <button
+        className="btn btn-primary"
+        onClick={() => router.push(redirect ?? "/")}
+      >
+        {buttonText ?? "Log me in"}
       </button>
     </div>
   );

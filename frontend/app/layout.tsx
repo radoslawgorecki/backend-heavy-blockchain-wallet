@@ -17,10 +17,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body suppressHydrationWarning className={inter.className}>
         <GlobalStateProvider>
           <main className="flex min-h-screen flex-col items-center justify-between">
-            <div className="relative flex flex-col items-center justify-center h-screen overflow-hidden">
+            <div className="relative flex flex-col items-center justify-center min-h-screen">
               {children}
             </div>
           </main>

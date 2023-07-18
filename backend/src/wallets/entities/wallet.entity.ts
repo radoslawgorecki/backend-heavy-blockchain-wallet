@@ -1,7 +1,7 @@
 import { Currency } from "@tatumio/api-client";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Exclude } from "class-transformer";
-import { Document } from "mongoose";
+import { Document, ObjectId, Types } from "mongoose";
 
 @Schema({ timestamps: true })
 export class Wallet extends Document {
@@ -19,6 +19,9 @@ export class Wallet extends Document {
 
   @Prop({ type: String, required: true })
   currency: Currency;
+
+  @Prop({ type: Types.ObjectId, ref: "User", required: false })
+  parent: ObjectId;
 
   @Prop({ required: true })
   @Exclude({ toPlainOnly: true })

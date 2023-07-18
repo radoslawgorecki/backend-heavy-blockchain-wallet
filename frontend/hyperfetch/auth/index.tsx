@@ -1,12 +1,9 @@
 import { Wallet } from "@/types";
 import { client } from "@/hyperfetch/server/client";
+import { RegisterResponse } from "@/types/register/register-response.type";
 type LoginResponse = { address: string; currency: string };
 type LoginRequest = { username: string; password: string };
-type RegisterResponse = {
-  privateKey: string;
-  mnemonic: string;
-  address: string;
-};
+
 type RegisterEmailRequest = {
   password: string;
 };

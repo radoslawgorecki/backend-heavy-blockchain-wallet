@@ -7,9 +7,9 @@ const CurrencyIcon: FC<{ currency: string; fiat?: boolean }> = ({
 }) => {
   let icon;
   if (fiat) {
-    icon = binanceCurrencyIcons.get(currency.toLowerCase());
+    icon = binanceCurrencyIcons.get(currency?.toLowerCase());
   } else {
-    icon = binanceCryptoIcons.get(currency.toLowerCase());
+    icon = binanceCryptoIcons.get(currency?.toLowerCase());
   }
   if (!icon) return null;
   return (

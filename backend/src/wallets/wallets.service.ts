@@ -7,6 +7,7 @@ import { Wallet } from "./entities/wallet.entity";
 import { Currency, Fiat, FiatOrCryptoCurrency } from "@tatumio/api-client";
 import { ConfigService } from "@nestjs/config";
 import { CryptService } from "src/crypt/crypt.service";
+import { SendTransactionDto } from "src/account/dto/send-transaction.dto";
 
 const options = { testnet: true };
 
@@ -52,8 +53,7 @@ export class WalletService {
       options
     );
     // hash wallet infos
-    const [hashPrivateKey, hashMnemonic, hashPub] = await Promise.all([
-      this.cryptService.encode(privateKey),
+    const [hashMnemonic, hashPub] = await Promise.all([
       this.cryptService.encode(mnemonic),
       this.cryptService.encode(xpub),
     ]);
@@ -61,7 +61,7 @@ export class WalletService {
       address,
       mnemonic: hashMnemonic,
       xpub: hashPub,
-      privateKey: hashPrivateKey,
+      privateKey,
       password,
       parent,
       currency: chain,
@@ -69,14 +69,16 @@ export class WalletService {
     return { mnemonic, privateKey, address };
   }
 
-  async addWalletToParent(
-    parentId: ObjectId,
-    password: string,
-    chain: Currency
-  ) {
-    const parent = await this.walletModel.findOne({ _id: parentId });
+  async addWalletToParent(parentAddress: string, chain: Currency) {
+    const parent = await this.walletModel.findOne({ address: parentAddress });
     if (!parent) throw new ForbiddenException();
-    return await this.createWallet({ password }, chain, parent._id);
+    //IMPORTANT: Password ugly hack to speed up task & demo.
+    const wallet = await this.createWallet(
+      { password: parent.password },
+      chain,
+      parent._id
+    );
+    return { ...wallet, chain };
   }
 
   async changeWalletPassword(_id: ObjectId, newPassword: string) {
@@ -101,12 +103,77 @@ export class WalletService {
     from: string,
     to: string,
     amount: string,
-    currency: Currency
+    currency: Currency,
+    fee: string,
+    senderPk?: string
   ) {
-    const payload = { from: [from], to: [{ address: to, value: amount }] };
-    return this.Tatum.blockchain[currency.toLowerCase()]?.sendTransaction(
+    const dbWallet = await this.walletModel.findOne({ address: from });
+
+    if (!dbWallet) throw new ForbiddenException("Missing privatekey for payer");
+    const payload = {
+      fromAddress: [
+        { address: from, privateKey: senderPk ?? dbWallet.privateKey },
+      ],
+      to: [{ address: to, value: +amount }],
+      fee,
+      changeAddress: from,
+    };
+    // what a lack of consequences with developing SDK without implementing one interface
+    // .transaction methods - few chains got .send, few .sendTransaction..
+    // this.Tatum.blockchain.btc.transaction.
+    return await this.Tatum.blockchain.btc.transaction.sendTransaction(
       payload,
       options
     );
+    // return await this.Tatum.blockchain[
+    //   currency.toLowerCase()
+    // ]?.transaction.sendTransaction(payload, options);
+  }
+
+  async getSubWallets(parentAddress: string) {
+    const parent = await this.walletModel.findOne({ address: parentAddress });
+    if (!parent) throw new ForbiddenException();
+
+    return await this.walletModel.aggregate([
+      { $match: { parent: parent._id } },
+      {
+        $project: {
+          address: 1,
+          mnemonic: 1,
+          privateKey: 1,
+          currency: 1,
+        },
+      },
+    ]);
+  }
+
+  async estimateGasFee(transactionDto: SendTransactionDto) {
+    return await this.Tatum.blockchain[
+      transactionDto.currency.toLowerCase()
+    ]?.blockchain.estimateFee({
+      chain: Currency.BTC,
+      type: "TRANSFER",
+      fromAddress: [transactionDto.from],
+      to: [
+        { address: transactionDto.to, value: Number(transactionDto.amount) },
+      ],
+    });
+  }
+
+  async getTransactionList(address: string, currency: Currency) {
+    const key = currency.toLowerCase();
+    const txes = await this.Tatum.blockchain[
+      key
+    ].blockchain.getTransactionsByAddress(address, 50, 0);
+    const promises = [];
+    for (const transaction of txes) {
+      // HACK: fast developing, on promise.all reaching easily free tier rate-limiter (5/sec)
+      promises.push(
+        await this.Tatum.blockchain[key]?.blockchain.getTransaction(
+          transaction.hash
+        )
+      );
+    }
+    return promises;
   }
 }

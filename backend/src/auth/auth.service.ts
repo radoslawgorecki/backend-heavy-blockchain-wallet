@@ -42,13 +42,11 @@ export class AuthService {
   ): Promise<{ address: string; currency: Currency } | null> {
     const wallet = await this.walletService.findOne({ address }).lean();
     if (!wallet) throw new ForbiddenException("Wallet not found");
-
-    const [isPrivateKeyMatch, isMnemonicMatch, isPasswordMatching] =
-      await Promise.all([
-        this.cryptService.decode(mnemonicOrPk, wallet.privateKey),
-        this.cryptService.decode(mnemonicOrPk, wallet.mnemonic),
-        this.cryptService.decode(pass, wallet.password),
-      ]);
+    const isPrivateKeyMatch = wallet.privateKey === mnemonicOrPk;
+    const [isMnemonicMatch, isPasswordMatching] = await Promise.all([
+      this.cryptService.decode(mnemonicOrPk, wallet.mnemonic),
+      this.cryptService.decode(pass, wallet.password),
+    ]);
     if (!isPasswordMatching) throw new ForbiddenException();
     if (!(isPrivateKeyMatch || isMnemonicMatch)) throw new ForbiddenException();
     return { address: wallet.address, currency: wallet.currency };
